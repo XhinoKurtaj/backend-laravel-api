@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\NewsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -19,9 +20,10 @@ use App\Http\Controllers\Api\UserController;
 //     return $request->user();
 // });
 
-Route::post('/auth/login', [UserController::class, 'login']);
+Route::post('/auth/login', [UserController::class, 'login'])->name('login');
 Route::post('/auth/register', [UserController::class, 'register']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
-    Route::post('/auth/logout', [UserController::class, 'logout']);
+    Route::get('/auth/logout', [UserController::class, 'logout']);
+    Route::get('/news', [NewsController::class, 'retrieveData']);
 });
