@@ -51,46 +51,50 @@ class NewsController extends Controller
     public function retrieveTheGuardianNews(Request $request)
     {
         $apiKey = env("THE_GUARDIAN_KEY", null);
+        $url = "https://content.guardianapis.com/search";
 
-        $q = $request->get("keyword");
-        $date = $request->get("fromDate");
-        $section = $request->get("source");
+        $keyword = $request->get('keyword');
+        $date = $request->get('date');
+        $category = $request->get('category');
+        $source = $request->get('source');
+        $page = $request->get('page', 1);
 
-        $page = $request->get("page");
+        $params = array(
+            'q' => $keyword,
+            'from-date' => $date,
+            'section' => $category,
+            'source' => $source,
+            'api-key' => $apiKey,
+            'page' => $page,
+        );
 
-        $part_url = "";
+        $queryString = http_build_query($params);
+        $response = Http::get($url . '?' . $queryString);
+        $data = $response->json();
 
-        if ($q != null) {
-            $part_url .= "&q=$q";
+        if (isset($data['response'])) {
+            $articles = $data['response']['results'];
+            $totalResults = $data['response']['total'];
+            $resultsPerPage = $data['response']['pageSize'];
+            $currentPage = $page;
+            $lastPage = $data['response']['pages'];
+
+            return response()->json([
+                'articles' =>  $articles,
+                'totalResults' => $totalResults,
+                'resultsPerPage' => $resultsPerPage,
+                'currentPage' => $currentPage,
+                'lastPage' => $lastPage,
+            ], 200);
+        } else {
+            return response()->json([
+                'articles' =>  [],
+                'totalResults' => 0,
+                'resultsPerPage' => 0,
+                'currentPage' => $page,
+                'lastPage' => 1,
+            ], 200);
         }
-        if ($page != null) {
-            $part_url .= "&page=$page";
-        }
-        if ($section != null) {
-            $part_url .= "&section=$section";
-        }
-        if ($date != null) {
-            $part_url .= "&from=$date";
-        }
-
-
-        $url = "https://content.guardianapis.com/search?";
-        $url .= substr($part_url, 1);
-        $url .= "&&api-key=$apiKey";
-
-        $apiRes = Http::get($url);
-        $parseResponse = $apiRes->json()['response'];
-        $response = [
-            'status' => $parseResponse['status'],
-            'total' => $parseResponse['total'],
-            'startIndex' => $parseResponse['startIndex'],
-            'pageSize' => $parseResponse['pageSize'],
-            'currentPage' => $parseResponse['currentPage'],
-            'pages' => $parseResponse['pages'],
-            'articles' => $parseResponse['results'],
-        ];
-
-        return response()->json($response);
     }
     public function retrieveNewYorkTimesData(Request $request)
     {
@@ -149,64 +153,5 @@ class NewsController extends Controller
                 'lastPage' => 1,
             ], 200);
         }
-    }
-
-
-    public function paginateData(Request $request)
-    {
-
-
-        // // Display results to user
-        // if (isset($data['response']['docs'])) {
-        //     $articles = $data['response']['docs'];
-        //     return view('articles', compact('articles'));
-        //     return response()->json($parseResponse);
-        // } else {
-        //     return view('articles', ['articles' => []]);
-        // }
-
-
-
-        // $apiKey = env("NEW_YORK_TIMES_KEY", null);
-
-        // $q = $request->get("keyword");
-        // $date = $request->get("fromDate");
-        // // $section = $request->get("source");
-
-        // $page = $request->get("page");
-
-        // $part_url = "";
-
-        // if ($q != null) {
-        //     $part_url .= "&q=$q";
-        // }
-        // if ($page != null) {
-        //     $part_url .= "&page=$page";
-        // }
-        // // if ($section != null) {
-        // //     $part_url .= "&section=$section";
-        // // }
-        // if ($date != null) {
-        //     $part_url .= "&from=$date";
-        // }
-
-        // $url = "https://api.nytimes.com/svc/search/v2/articlesearch.json?";
-        // $url .= substr($part_url, 1);
-        // $url .= "&api-key=$apiKey";
-
-        // $response = Http::get($url);
-        // $parseResponse = $response->json($key = null, $default = null);
-        // // https://api.nytimes.com/svc/search/v2/articlesearch.json?q=tiktok&&page=200&api-key=ta1II5cb1dN5i9YYF0rcikXhUz5RQPSN
-
-        // return response()->json($parseResponse);
-
-        // $redis = Redis::connection();
-
-        // $articles = $parseResponse['articles'];
-        // $redis->set('user_details', json_encode($articles));
-        $redis    = Redis::connection();
-        $response = $redis->get('user_details');
-
-        $response = json_decode($response);
     }
 }
