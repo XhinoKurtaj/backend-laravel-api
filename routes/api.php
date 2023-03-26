@@ -26,7 +26,7 @@ Route::post('/auth/register', [UserController::class, 'register']);
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/auth/logout', [UserController::class, 'logout']);
-    Route::get('/news', [NewsController::class, 'retrieveData']);
+    Route::get('/newsapi/news', [NewsController::class, 'retrieveData']);
     Route::get('/guardian/news', [NewsController::class, 'retrieveTheGuardianNews']);
     Route::get('/newyourktimes/news', [NewsController::class, 'retrieveNewYorkTimesData']);
 

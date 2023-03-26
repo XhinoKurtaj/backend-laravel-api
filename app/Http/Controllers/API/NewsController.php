@@ -15,37 +15,43 @@ class NewsController extends Controller
 
         $apiKey = env("NEWSAPI_KEY", null);
 
-        $q = $request->get("keyword");
-        $date = $request->get("fromDate");
-        $source = $request->get("source");
-        $category = $request->get("category");
+        $url = "https://newsapi.org/v2/everything";
 
-        $type = "everything";
-        $part_url = "";
+        $keyword = $request->get('keyword');
+        $date = $request->get('date');
+        $category = $request->get('category');
+        $source = $request->get('source');
 
-        if ($q != null) {
-            $part_url .= "&q=$q";
+        $params = array(
+            'q' => $keyword,
+            'from' => base64_encode($date),
+            'category' => $category,
+            'sources' => $source,
+            'apiKey' => $apiKey
+        );
+
+        $queryString = http_build_query($params);
+        $response = Http::get($url . '?' . $queryString);
+        $data = $response->json();
+
+        if (isset($data['articles'])) {
+            $articles = $data['articles'];
+            $status = $data['status'];
+            $totalResults = $data['totalResults'];
+
+
+            return response()->json([
+                'articles' =>  $articles,
+                'totalResults' => $totalResults,
+                'status' => $status,
+            ], 200);
+        } else {
+            return response()->json([
+                'articles' =>  [],
+                'totalResults' => 0,
+                'status' => 400,
+            ], 200);
         }
-        if ($date != null) {
-            $encD = base64_encode($date);
-            $part_url .= "&from=$encD";
-        }
-        if ($source != null) {
-            $part_url .= "&sources=$source";
-        }
-        if ($category != null) {
-            $part_url .= "&category=$category";
-            $type = "top-headlines";
-        }
-
-        $url = "https://newsapi.org/v2/$type?";
-        $url .= substr($part_url, 1);
-        $url .= "&sortBy=popularity&apiKey=$apiKey";
-
-        $response = Http::get($url);
-        $parseResponse = $response->json($key = null, $default = null);
-
-        return response()->json($parseResponse);
     }
 
     public function retrieveTheGuardianNews(Request $request)
